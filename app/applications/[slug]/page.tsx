@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -7,7 +8,7 @@ import {
   Download,
 } from "lucide-react";
 import { applicationsData, getApplication } from "@/lib/applications-data";
-import { getAllProducts, type StoredProduct } from "@/lib/product-store";
+// import { getAllProducts, type StoredProduct } from "@/lib/product-store";
 import { ProductCard } from "@/components/product/ProductCard";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -109,10 +110,19 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
   const accent = ACCENT[app.accentColor];
 
   /* Get all products, filter by application */
-  const allProducts = await getAllProducts();
-  const recommended = allProducts
-    .filter((p) => p.applications.includes(app.slug as any))
-    .slice(0, 4);
+  // const allProducts = await getAllProducts();
+  // const recommended = allProducts
+  //   .filter((p) => p.applications.includes(app.slug as any))
+  //   .slice(0, 4);
+  let recommended: any[] = [];
+  try {
+    const res = await apiFetch<{ items: any[] }>("/api/products?pageSize=100");
+    recommended = (res.items ?? [])
+      .filter((p: any) => p.applications?.includes(app.slug))
+      .slice(0, 4);
+  } catch {
+    recommended = [];
+  }
 
   /* Sibling applications */
   const siblings = applicationsData.filter((a) => a.slug !== app.slug);
