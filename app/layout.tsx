@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-// @ts-expect-error - Next.js global CSS import typing is provided by the framework.
 import "./globals.css";
 import { OrganizationSchema } from "@/components/seo/OrganizationSchema";
 

@@ -43,21 +43,21 @@ export function Header() {
         <div className="container-tight flex h-16 sm:h-20 items-center justify-between gap-4">
           {/* Logo */}
           <Link
-            href="/"
-            className="flex items-center gap-2 shrink-0"
-            aria-label={`${SITE.name} — Home`}
-          >
-            <div className="relative h-12 sm:h-14 w-32 sm:w-40">
-              <Image
-                src="/logo.webp"
-                alt={`${SITE.name} logo`}
-                fill
-                sizes="(max-width: 640px) 128px, 160px"
-                className="object-contain object-left"
-                priority
-              />
-            </div>
-          </Link>
+              href="/"
+              className="flex items-center gap-2 shrink-0"
+              aria-label={`${SITE.name} — Home`}
+            >
+              <div className="relative h-12 sm:h-14 w-32 sm:w-40">
+                <Image
+                  src="/logo.webp"
+                  alt={`${SITE.name} logo`}
+                  fill
+                  sizes="(max-width: 640px) 128px, 160px"
+                  className="object-contain object-left"
+                  priority
+                />
+              </div>
+            </Link>
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-0.5">

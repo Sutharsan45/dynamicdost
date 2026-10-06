@@ -1,37 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2, Lock } from "lucide-react";
-import { apiFetch, setToken } from "@/lib/api";
+import { apiFetch, setToken, API_BASE } from "@/lib/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = params.get("next") ?? "/admin/products";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [debug, setDebug] = useState<string[]>([]);
+
+  const log = (msg: string) => {
+    console.log("[login]", msg);
+    setDebug((d) => [...d, msg]);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    log("submit fired");
+
     setLoading(true);
     setError("");
 
     try {
-      const res = await apiFetch<{ token: string }>("/api/admin/login", {
+      const url = `${API_BASE}/api/admin/login`;
+      log(`POST ${url}`);
+
+      const res = await fetch(url, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      setToken(res.token);
-      router.push(next);
-      router.refresh();
+      log(`status: ${res.status}`);
+
+      const data = await res.json();
+      log(`body: ${JSON.stringify(data).slice(0, 80)}...`);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      setToken(data.token);
+      log("token saved");
+
+      log("redirecting to /admin/products...");
+      window.location.href = "/admin/products";
     } catch (e: any) {
+      log(`error: ${e.message}`);
       setError(e.message || "Login failed");
-    } finally {
       setLoading(false);
     }
   };
@@ -46,9 +67,6 @@ export default function AdminLoginPage() {
           <h1 className="text-xl font-semibold text-ink-900">
             Admin sign in
           </h1>
-          <p className="text-sm text-ink-500 mt-1">
-            Restricted access — Dynamic Dost catalog
-          </p>
         </div>
 
         <form onSubmit={submit} className="space-y-4">
@@ -61,7 +79,6 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input mt-1.5"
-              placeholder="admin@dynamicdost.com"
             />
           </label>
 
@@ -98,9 +115,16 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-ink-400">
-          Session expires after 4 hours of inactivity.
-        </p>
+        {/* Debug panel — remove after fixing */}
+        {debug.length > 0 && (
+          <div className="mt-6 rounded-lg border border-ink-200 bg-ink-50 p-3 text-xs font-mono">
+            {debug.map((line, i) => (
+              <div key={i} className="text-ink-700">
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

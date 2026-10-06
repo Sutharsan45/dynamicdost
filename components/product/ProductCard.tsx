@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { ZipperProduct } from "@/types/product";
+import { apiUrl } from "@/lib/api";
+
 
 export function ProductCard({ product }: { product: ZipperProduct }) {
   return (
@@ -13,7 +15,7 @@ export function ProductCard({ product }: { product: ZipperProduct }) {
       <div className="relative aspect-[4/3] bg-ink-50 overflow-hidden">
         {product.images?.[0] ? (
           <Image
-            src={product.images[0]}
+            src={apiUrl(product.images[0])}   // ✅ https://siva123.../uploads/abc.webp
             alt={product.name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
