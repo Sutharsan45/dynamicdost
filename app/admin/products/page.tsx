@@ -749,7 +749,7 @@ export default function AdminProductsPage() {
                     <ImageUploader
                       images={form.images}
                       onChange={(images) => setForm({ ...form, images })}
-                      maxImages={5}
+                      maxImages={40}
                     />
                   </Field>
                 </Section>

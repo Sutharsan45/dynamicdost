@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SpecTable } from "@/components/product/SpecTable";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
+import { ProductGallery } from "@/components/product/ProductGallery";
 import { apiFetch, apiUrl } from "@/lib/api";
 import { formatNumber, titleCase } from "@/lib/utils";
 
@@ -148,63 +149,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
         {/* MAIN GRID */}
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-14 items-start">
           {/* -------- Image panel -------- */}
+          {/* -------- Image panel -------- */}
           <div className="lg:sticky lg:top-24">
-            <div className="relative aspect-square rounded-2xl border border-ink-200 bg-gradient-to-br from-ink-50 via-white to-ink-50 overflow-hidden">
-              {primaryImage ? (
-                <Image
-                  src={primaryImage}
-                  alt={product.name}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 grid place-items-center p-8">
-                  <div className="text-center select-none">
-                    <div className="text-7xl sm:text-8xl lg:text-9xl font-bold tracking-tighter text-ink-200">
-                      {product.specs.gaugeMm}
-                      <span className="text-3xl sm:text-4xl align-top text-ink-300">
-                        mm
-                      </span>
-                    </div>
-                    <div className="mt-4 text-xs uppercase tracking-[0.2em] text-ink-500 font-medium">
-                      {product.type}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {product.featured && (
-                <span className="absolute top-4 left-4 z-10 inline-flex items-center rounded-full bg-ink-900 text-white text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5">
-                  Featured
-                </span>
-              )}
-
-              <span className="absolute top-4 right-4 z-10 inline-flex items-center rounded-full bg-white border border-ink-200 text-ink-700 text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5">
-                {product.componentType}
-              </span>
-            </div>
-
-            {/* Thumbnail strip */}
-            {galleryImages.length > 1 && (
-              <div className="mt-3 grid grid-cols-5 gap-2">
-                {galleryImages.map((img, i) => (
-                  <div
-                    key={img}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-ink-200"
-                  >
-                    <Image
-                      src={img}
-                      alt={`${product.name} view ${i + 1}`}
-                      fill
-                      sizes="15vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <ProductGallery
+              images={product.images ?? []}
+              name={product.name}
+              featured={product.featured}
+              componentType={product.componentType}
+              gaugeMm={product.specs.gaugeMm}
+              type={product.type}
+            />
 
             {/* Trust markers */}
             <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
