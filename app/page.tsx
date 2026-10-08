@@ -118,7 +118,7 @@ export default async function HomePage() {
       {/* =========================================
           3. COMPONENT SHOWCASE
       ========================================= */}
-      <section className="section">
+      {/* <section className="section">
         <div className="container-tight">
           <div className="max-w-2xl mb-12">
             <p className="eyebrow">Anatomy of a zipper</p>
@@ -170,7 +170,7 @@ export default async function HomePage() {
             />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* =========================================
           4. AUTO-SCROLL SHOWCASE
@@ -180,7 +180,7 @@ export default async function HomePage() {
       {/* =========================================
           5. FEATURED PRODUCTS
       ========================================= */}
-      <section className="section bg-ink-50 border-y border-ink-100">
+      {/* <section className="section bg-ink-50 border-y border-ink-100">
         <div className="container-tight">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
             <div>
@@ -220,12 +220,12 @@ export default async function HomePage() {
             </div>
           )}
         </div>
-      </section>
+      </section> */}
 
       {/* =========================================
           6. APPLICATIONS GRID
       ========================================= */}
-      <section className="section">
+      {/* <section className="section">
         <div className="container-tight">
           <div className="max-w-2xl mb-12">
             <p className="eyebrow">Applications</p>
@@ -283,7 +283,7 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* =========================================
           7. WHY DYNAMIC DOST

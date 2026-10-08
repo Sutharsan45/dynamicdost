@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ZoomIn,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -24,6 +29,7 @@ export function ProductGallery({
 }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const thumbsRef = useRef<HTMLDivElement>(null);
 
   const total = images.length;
   const hasImages = total > 0;
@@ -47,7 +53,7 @@ export function ProductGallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
-  /* Lock body scroll when lightbox is open */
+  /* Lock body scroll in lightbox */
   useEffect(() => {
     if (lightboxOpen) {
       document.body.style.overflow = "hidden";
@@ -57,7 +63,23 @@ export function ProductGallery({
     }
   }, [lightboxOpen]);
 
-  /* -------- No images: show placeholder -------- */
+  /* Auto-scroll active thumbnail into view when it changes */
+  useEffect(() => {
+    const container = thumbsRef.current;
+    if (!container) return;
+    const active = container.querySelector<HTMLElement>(
+      `[data-thumb-index="${activeIndex}"]`
+    );
+    if (active) {
+      active.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeIndex]);
+
+  /* -------- No images: placeholder -------- */
   if (!hasImages) {
     return (
       <div className="relative aspect-square rounded-2xl border border-ink-200 bg-gradient-to-br from-ink-50 via-white to-ink-50 overflow-hidden">
@@ -115,7 +137,7 @@ export function ProductGallery({
           <span className="sr-only">Open full size</span>
         </button>
 
-        {/* Zoom hint (appears on hover) */}
+        {/* Zoom hint */}
         <div className="pointer-events-none absolute bottom-4 left-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-900/85 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1">
             <ZoomIn className="h-3 w-3" />
@@ -137,14 +159,14 @@ export function ProductGallery({
           </span>
         )}
 
-        {/* Image counter */}
+        {/* Counter */}
         {total > 1 && (
           <span className="pointer-events-none absolute bottom-4 right-4 z-20 inline-flex items-center rounded-full bg-ink-900/85 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 tabular-nums">
             {activeIndex + 1} / {total}
           </span>
         )}
 
-        {/* Prev / Next arrows */}
+        {/* Prev / Next */}
         {total > 1 && (
           <>
             <button
@@ -173,44 +195,50 @@ export function ProductGallery({
         )}
       </div>
 
-      {/* ============ THUMBNAILS — ALL IMAGES ============ */}
+      {/* ============ HORIZONTAL SCROLLING THUMBNAILS ============ */}
       {total > 1 && (
-        <div
-          className={cn(
-            "mt-3 grid gap-2",
-            total <= 5
-              ? "grid-cols-5"
-              : total <= 8
-              ? "grid-cols-4 sm:grid-cols-5"
-              : "grid-cols-5"
+        <div className="mt-3">
+          {/* Scroll container */}
+          <div
+            ref={thumbsRef}
+            className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth pb-1"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {images.map((img, i) => {
+              const active = i === activeIndex;
+              return (
+                <button
+                  key={`${img}-${i}`}
+                  type="button"
+                  data-thumb-index={i}
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Show image ${i + 1}`}
+                  aria-current={active}
+                  className={cn(
+                    "relative aspect-square w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all shrink-0",
+                    active
+                      ? "border-brand-500 ring-2 ring-brand-500/20"
+                      : "border-ink-200 hover:border-ink-400 opacity-70 hover:opacity-100"
+                  )}
+                >
+                  <Image
+                    src={img}
+                    alt={`${name} thumbnail ${i + 1}`}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Optional small scroll hint */}
+          {total > 6 && (
+            <p className="mt-1.5 text-[11px] text-ink-400 text-center sm:hidden">
+              Swipe to see more →
+            </p>
           )}
-        >
-          {images.map((img, i) => {
-            const active = i === activeIndex;
-            return (
-              <button
-                key={`${img}-${i}`}
-                type="button"
-                onClick={() => setActiveIndex(i)}
-                aria-label={`Show image ${i + 1}`}
-                aria-current={active}
-                className={cn(
-                  "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
-                  active
-                    ? "border-brand-500 ring-2 ring-brand-500/20"
-                    : "border-ink-200 hover:border-ink-400 opacity-70 hover:opacity-100"
-                )}
-              >
-                <Image
-                  src={img}
-                  alt={`${name} thumbnail ${i + 1}`}
-                  fill
-                  sizes="15vw"
-                  className="object-cover"
-                />
-              </button>
-            );
-          })}
         </div>
       )}
 
@@ -225,13 +253,13 @@ export function ProductGallery({
             type="button"
             onClick={() => setLightboxOpen(false)}
             aria-label="Close"
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 h-11 w-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-10"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 h-11 w-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-20"
           >
             <X className="h-5 w-5" />
           </button>
 
           {/* Counter */}
-          <span className="absolute top-6 left-6 text-white/80 text-sm font-medium tabular-nums z-10">
+          <span className="absolute top-6 left-6 text-white/80 text-sm font-medium tabular-nums z-20">
             {activeIndex + 1} / {total}
           </span>
 
@@ -244,7 +272,7 @@ export function ProductGallery({
                 prev();
               }}
               aria-label="Previous image"
-              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-10"
+              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-20"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -274,16 +302,16 @@ export function ProductGallery({
                 next();
               }}
               aria-label="Next image"
-              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-10"
+              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition-colors z-20"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
           )}
 
-          {/* Thumbnail strip at bottom */}
+          {/* Lightbox thumbnail strip */}
           {total > 1 && (
             <div
-              className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto p-2 rounded-xl bg-white/5 backdrop-blur-sm"
+              className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto p-2 rounded-xl bg-white/5 backdrop-blur-sm no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               {images.map((img, i) => {

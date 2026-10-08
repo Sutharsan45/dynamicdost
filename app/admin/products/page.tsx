@@ -57,6 +57,27 @@ interface Product {
   };
 }
 
+/* =========================================
+   FORM STATE — includes chosen display units
+   ========================================= */
+interface SpecsForm {
+  gauge: number;
+  gaugeUnit: LengthUnit;
+  tapeWidth: number;
+  tapeWidthUnit: LengthUnit;
+  tensile: number;
+  tensileUnit: ForceUnit;
+  minOrderQty: number;
+  moqUnit: MoqUnit;
+  leadTimeDays: number;
+  operatingTempMin: number;
+  operatingTempMax: number;
+}
+
+type LengthUnit = "mm" | "cm" | "m";
+type ForceUnit = "N" | "kN";
+type MoqUnit = "pcs" | "sets" | "kg";
+
 interface FormState {
   name: string;
   componentType: ComponentType;
@@ -69,17 +90,48 @@ interface FormState {
   highlights: string;
   specSheetUrl: string;
   featured: boolean;
-  specs: {
-    gaugeMm: number;
-    tapeWidthMm: number;
-    tensileStrengthN: number;
-    minOrderQty: number;
-    leadTimeDays: number;
-    operatingTempMin: number;
-    operatingTempMax: number;
-  };
+  specs: SpecsForm;
 }
 
+/* =========================================
+   UNIT CONVERSION
+   ========================================= */
+const LENGTH_TO_MM: Record<LengthUnit, number> = {
+  mm: 1,
+  cm: 10,
+  m: 1000,
+};
+
+const FORCE_TO_N: Record<ForceUnit, number> = {
+  N: 1,
+  kN: 1000,
+};
+
+const MOQ_TO_PCS: Record<MoqUnit, number> = {
+  pcs: 1,
+  sets: 1,
+  kg: 1,
+};
+
+function toBaseLength(value: number, unit: LengthUnit): number {
+  return value * LENGTH_TO_MM[unit];
+}
+
+function fromBaseLength(valueMm: number, unit: LengthUnit): number {
+  return valueMm / LENGTH_TO_MM[unit];
+}
+
+function toBaseForce(value: number, unit: ForceUnit): number {
+  return value * FORCE_TO_N[unit];
+}
+
+function fromBaseForce(valueN: number, unit: ForceUnit): number {
+  return valueN / FORCE_TO_N[unit];
+}
+
+/* =========================================
+   CATEGORY CONFIG
+   ========================================= */
 const CATEGORY_OPTIONS: { value: ComponentType; label: string }[] = [
   { value: "tape", label: "Tape" },
   { value: "slider", label: "Slider" },
@@ -141,15 +193,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "ISO 9001",
     applications: "apparel, luggage",
     highlights: "",
-    specs: {
-      gaugeMm: 5,
-      tapeWidthMm: 26,
-      tensileStrengthN: 420,
-      minOrderQty: 5000,
-      leadTimeDays: 14,
-      operatingTempMin: -30,
-      operatingTempMax: 80,
-    },
   },
   slider: {
     material: "Zinc alloy",
@@ -157,15 +200,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "ISO 9001, REACH",
     applications: "apparel, outdoor, luggage",
     highlights: "",
-    specs: {
-      gaugeMm: 5,
-      tapeWidthMm: 26,
-      tensileStrengthN: 400,
-      minOrderQty: 10000,
-      leadTimeDays: 15,
-      operatingTempMin: -30,
-      operatingTempMax: 90,
-    },
   },
   teeth: {
     material: "Nylon coil",
@@ -173,15 +207,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "OEKO-TEX 100, REACH, ISO 9001",
     applications: "apparel, outdoor, luggage",
     highlights: "",
-    specs: {
-      gaugeMm: 5,
-      tapeWidthMm: 26,
-      tensileStrengthN: 420,
-      minOrderQty: 5000,
-      leadTimeDays: 18,
-      operatingTempMin: -30,
-      operatingTempMax: 80,
-    },
   },
   webbing: {
     material: "Polyester webbing",
@@ -189,15 +214,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "ISO 9001, REACH",
     applications: "outdoor, luggage, footwear",
     highlights: "",
-    specs: {
-      gaugeMm: 0,
-      tapeWidthMm: 25,
-      tensileStrengthN: 1200,
-      minOrderQty: 3000,
-      leadTimeDays: 12,
-      operatingTempMin: -20,
-      operatingTempMax: 80,
-    },
   },
   labels: {
     material: "Woven polyester",
@@ -205,15 +221,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "OEKO-TEX 100",
     applications: "apparel",
     highlights: "",
-    specs: {
-      gaugeMm: 0,
-      tapeWidthMm: 0,
-      tensileStrengthN: 0,
-      minOrderQty: 500,
-      leadTimeDays: 10,
-      operatingTempMin: -10,
-      operatingTempMax: 60,
-    },
   },
   threads: {
     material: "Bonded polyester",
@@ -221,15 +228,6 @@ const CATEGORY_DEFAULTS: Record<ComponentType, Partial<FormState>> = {
     certifications: "ISO 9001, OEKO-TEX 100",
     applications: "apparel, footwear",
     highlights: "",
-    specs: {
-      gaugeMm: 0,
-      tapeWidthMm: 0,
-      tensileStrengthN: 0,
-      minOrderQty: 1000,
-      leadTimeDays: 12,
-      operatingTempMin: -10,
-      operatingTempMax: 100,
-    },
   },
 };
 
@@ -246,10 +244,14 @@ const EMPTY_FORM: FormState = {
   specSheetUrl: "",
   featured: false,
   specs: {
-    gaugeMm: 0,
-    tapeWidthMm: 0,
-    tensileStrengthN: 0,
+    gauge: 5,
+    gaugeUnit: "mm",
+    tapeWidth: 26,
+    tapeWidthUnit: "mm",
+    tensile: 420,
+    tensileUnit: "N",
     minOrderQty: 5000,
+    moqUnit: "pcs",
     leadTimeDays: 14,
     operatingTempMin: -30,
     operatingTempMax: 80,
@@ -266,10 +268,6 @@ function buildFormForCategory(cat: ComponentType): FormState {
     certifications: defaults.certifications ?? "",
     applications: defaults.applications ?? "",
     highlights: defaults.highlights ?? "",
-    specs: {
-      ...EMPTY_FORM.specs,
-      ...(defaults.specs ?? {}),
-    },
   };
 }
 
@@ -354,6 +352,7 @@ export default function AdminProductsPage() {
     setError("");
   };
 
+  /* When editing, convert stored mm/N back to a friendly unit */
   const openEdit = (product: Product) => {
     setForm({
       name: product.name,
@@ -368,10 +367,14 @@ export default function AdminProductsPage() {
       specSheetUrl: product.specSheetUrl ?? "",
       featured: product.featured ?? false,
       specs: {
-        gaugeMm: product.specs?.gaugeMm ?? 0,
-        tapeWidthMm: product.specs?.tapeWidthMm ?? 0,
-        tensileStrengthN: product.specs?.tensileStrengthN ?? 0,
+        gauge: fromBaseLength(product.specs?.gaugeMm ?? 0, "mm"),
+        gaugeUnit: "mm",
+        tapeWidth: fromBaseLength(product.specs?.tapeWidthMm ?? 0, "mm"),
+        tapeWidthUnit: "mm",
+        tensile: fromBaseForce(product.specs?.tensileStrengthN ?? 0, "N"),
+        tensileUnit: "N",
         minOrderQty: product.specs?.minOrderQty ?? 5000,
+        moqUnit: "pcs",
         leadTimeDays: product.specs?.leadTimeDays ?? 14,
         operatingTempMin: product.specs?.operatingTempC?.[0] ?? -30,
         operatingTempMax: product.specs?.operatingTempC?.[1] ?? 80,
@@ -398,19 +401,6 @@ export default function AdminProductsPage() {
         finish: prev.finish || defaults.finish,
         certifications: prev.certifications || defaults.certifications,
         applications: prev.applications || defaults.applications,
-        specs: {
-          gaugeMm: prev.specs.gaugeMm || defaults.specs.gaugeMm,
-          tapeWidthMm: prev.specs.tapeWidthMm || defaults.specs.tapeWidthMm,
-          tensileStrengthN:
-            prev.specs.tensileStrengthN || defaults.specs.tensileStrengthN,
-          minOrderQty: prev.specs.minOrderQty || defaults.specs.minOrderQty,
-          leadTimeDays:
-            prev.specs.leadTimeDays || defaults.specs.leadTimeDays,
-          operatingTempMin:
-            prev.specs.operatingTempMin || defaults.specs.operatingTempMin,
-          operatingTempMax:
-            prev.specs.operatingTempMax || defaults.specs.operatingTempMax,
-        },
       };
     });
   };
@@ -449,13 +439,19 @@ export default function AdminProductsPage() {
         featured: form.featured,
         specSheetUrl: form.specSheetUrl,
         specs: {
-          gaugeMm: Number(form.specs.gaugeMm) || 0,
-          tapeWidthMm: Number(form.specs.tapeWidthMm) || 0,
-          tensileStrengthN: Number(form.specs.tensileStrengthN) || 0,
+          gaugeMm: Number(
+            toBaseLength(form.specs.gauge, form.specs.gaugeUnit).toFixed(3)
+          ),
+          tapeWidthMm: Number(
+            toBaseLength(form.specs.tapeWidth, form.specs.tapeWidthUnit).toFixed(3)
+          ),
+          tensileStrengthN: Number(
+            toBaseForce(form.specs.tensile, form.specs.tensileUnit).toFixed(3)
+          ),
           sliderCompatibility: [],
           colorCodes: [],
           lengthOptionsMm: [],
-          minOrderQty: Number(form.specs.minOrderQty) || 5000,
+          minOrderQty: Number(form.specs.minOrderQty) || 0,
           leadTimeDays: Number(form.specs.leadTimeDays) || 14,
           operatingTempC: [
             Number(form.specs.operatingTempMin) || -30,
@@ -755,127 +751,158 @@ export default function AdminProductsPage() {
                 </Section>
 
                 <Section title="Specifications">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Field label="Gauge (mm)">
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input"
-                        value={form.specs.gaugeMm}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              gaugeMm: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* GAUGE — mm/cm/m */}
+                    <UnitField
+                      label="Gauge"
+                      value={form.specs.gauge}
+                      onChange={(v) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, gauge: v },
+                        })
+                      }
+                      unit={form.specs.gaugeUnit}
+                      unitOptions={[
+                        { value: "mm", label: "mm" },
+                        { value: "cm", label: "cm" },
+                        { value: "m", label: "m" },
+                      ]}
+                      onUnitChange={(u) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, gaugeUnit: u as LengthUnit },
+                        })
+                      }
+                      step={0.1}
+                    />
 
-                    <Field label="Tape width (mm)">
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="input"
-                        value={form.specs.tapeWidthMm}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              tapeWidthMm: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                    {/* TAPE WIDTH — mm/cm/m */}
+                    <UnitField
+                      label="Tape width"
+                      value={form.specs.tapeWidth}
+                      onChange={(v) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, tapeWidth: v },
+                        })
+                      }
+                      unit={form.specs.tapeWidthUnit}
+                      unitOptions={[
+                        { value: "mm", label: "mm" },
+                        { value: "cm", label: "cm" },
+                        { value: "m", label: "m" },
+                      ]}
+                      onUnitChange={(u) =>
+                        setForm({
+                          ...form,
+                          specs: {
+                            ...form.specs,
+                            tapeWidthUnit: u as LengthUnit,
+                          },
+                        })
+                      }
+                      step={0.1}
+                    />
 
-                    <Field label="Tensile strength (N)">
-                      <input
-                        type="number"
-                        className="input"
-                        value={form.specs.tensileStrengthN}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              tensileStrengthN: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                    {/* TENSILE — N/kN */}
+                    <UnitField
+                      label="Tensile strength"
+                      value={form.specs.tensile}
+                      onChange={(v) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, tensile: v },
+                        })
+                      }
+                      unit={form.specs.tensileUnit}
+                      unitOptions={[
+                        { value: "N", label: "N" },
+                        { value: "kN", label: "kN" },
+                      ]}
+                      onUnitChange={(u) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, tensileUnit: u as ForceUnit },
+                        })
+                      }
+                      step={1}
+                    />
 
-                    <Field label="Min operating temp (°C)">
-                      <input
-                        type="number"
-                        className="input"
-                        value={form.specs.operatingTempMin}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              operatingTempMin: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                    {/* MOQ — pcs/sets/kg */}
+                    <UnitField
+                      label="MOQ"
+                      value={form.specs.minOrderQty}
+                      onChange={(v) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, minOrderQty: v },
+                        })
+                      }
+                      unit={form.specs.moqUnit}
+                      unitOptions={[
+                        { value: "pcs", label: "pcs" },
+                        { value: "sets", label: "sets" },
+                        { value: "kg", label: "kg" },
+                      ]}
+                      onUnitChange={(u) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, moqUnit: u as MoqUnit },
+                        })
+                      }
+                      step={100}
+                    />
 
-                    <Field label="Max operating temp (°C)">
-                      <input
-                        type="number"
-                        className="input"
-                        value={form.specs.operatingTempMax}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              operatingTempMax: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                    {/* LEAD TIME — fixed days */}
+                    <SpecField
+                      label="Lead time"
+                      unit="days"
+                      value={form.specs.leadTimeDays}
+                      step={1}
+                      onChange={(v) =>
+                        setForm({
+                          ...form,
+                          specs: { ...form.specs, leadTimeDays: v },
+                        })
+                      }
+                    />
 
-                    <Field label="MOQ (pcs)">
-                      <input
-                        type="number"
-                        className="input"
-                        value={form.specs.minOrderQty}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              minOrderQty: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
-
-                    <Field label="Lead time (days)">
-                      <input
-                        type="number"
-                        className="input"
-                        value={form.specs.leadTimeDays}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            specs: {
-                              ...form.specs,
-                              leadTimeDays: Number(e.target.value) || 0,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
+                    {/* TEMPERATURE — fixed °C */}
+                    <div>
+                      <span className="block text-sm font-medium text-ink-700 mb-1.5">
+                        Operating temperature
+                      </span>
+                      <div className="flex items-stretch gap-2">
+                        <SpecField
+                          label=""
+                          unit="°C"
+                          value={form.specs.operatingTempMin}
+                          step={1}
+                          onChange={(v) =>
+                            setForm({
+                              ...form,
+                              specs: { ...form.specs, operatingTempMin: v },
+                            })
+                          }
+                        />
+                        <span className="self-center text-xs font-medium text-ink-400">
+                          to
+                        </span>
+                        <SpecField
+                          label=""
+                          unit="°C"
+                          value={form.specs.operatingTempMax}
+                          step={1}
+                          onChange={(v) =>
+                            setForm({
+                              ...form,
+                              specs: { ...form.specs, operatingTempMax: v },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
 
                     <Field label="Material">
                       <input
@@ -999,6 +1026,108 @@ export default function AdminProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/* =========================================
+   SpecField — numeric input + FIXED unit label
+   Used for days, °C
+   ========================================= */
+function SpecField({
+  label,
+  unit,
+  value,
+  onChange,
+  step = 1,
+  min,
+}: {
+  label: string;
+  unit: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+  min?: number;
+}) {
+  return (
+    <label className="block flex-1">
+      {label && (
+        <span className="block text-sm font-medium text-ink-700 mb-1.5">
+          {label}
+        </span>
+      )}
+      <div className="flex items-stretch rounded-lg border border-ink-200 bg-white overflow-hidden focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition">
+        <input
+          type="number"
+          step={step}
+          min={min}
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(e) => {
+            const v = parseFloat(e.target.value);
+            onChange(Number.isFinite(v) ? v : 0);
+          }}
+          className="flex-1 min-w-0 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-0 tabular-nums"
+        />
+        <span className="px-3 py-2.5 text-xs font-medium text-ink-500 bg-ink-50 border-l border-ink-200 select-none flex items-center">
+          {unit}
+        </span>
+      </div>
+    </label>
+  );
+}
+
+/* =========================================
+   UnitField — numeric input + SELECTABLE unit
+   Used for mm/cm/m, N/kN, pcs/sets/kg
+   ========================================= */
+function UnitField({
+  label,
+  value,
+  onChange,
+  unit,
+  unitOptions,
+  onUnitChange,
+  step = 1,
+  min,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  unit: string;
+  unitOptions: { value: string; label: string }[];
+  onUnitChange: (u: string) => void;
+  step?: number;
+  min?: number;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-ink-700 mb-1.5">
+        {label}
+      </span>
+      <div className="flex items-stretch rounded-lg border border-ink-200 bg-white overflow-hidden focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition">
+        <input
+          type="number"
+          step={step}
+          min={min}
+          value={Number.isFinite(value) ? value : ""}
+          onChange={(e) => {
+            const v = parseFloat(e.target.value);
+            onChange(Number.isFinite(v) ? v : 0);
+          }}
+          className="flex-1 min-w-0 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-0 tabular-nums"
+        />
+        <select
+          value={unit}
+          onChange={(e) => onUnitChange(e.target.value)}
+          className="px-2.5 py-2.5 text-xs font-medium text-ink-700 bg-ink-50 border-l border-ink-200 focus:outline-none cursor-pointer hover:bg-ink-100 transition-colors"
+        >
+          {unitOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </label>
   );
 }
 

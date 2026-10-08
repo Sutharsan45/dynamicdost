@@ -50,11 +50,11 @@ export default function DeliveryPage() {
             </div>
 
             <h1 className="h1 mt-5 text-balance">
-              Delivered on time,{" "}
-              <span className="text-brand-600">every time</span>
+              Delivered on Time,
+              <span className="text-brand-600">Every Time</span>
             </h1>
 
-            <p className="lead mt-5 text-pretty max-w-2xl">
+            {/* <p className="lead mt-5 text-pretty max-w-2xl">
               {BRAND.name} ships to every corner of India and 40+ countries
               worldwide. From FTL road freight to consolidated sea containers —
               we handle logistics, customs documentation, and last-mile
@@ -86,7 +86,7 @@ export default function DeliveryPage() {
                   </dd>
                 </div>
               ))}
-            </dl>
+            </dl> */}
           </div>
         </div>
       </section>
