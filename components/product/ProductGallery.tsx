@@ -303,7 +303,7 @@ export function ProductGallery({
         </div>
       )}
 
-      {/* ============ LIGHTBOX ============ */}
+      {/* ============ LIGHTBOXnnbnhn ============ */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-[100] bg-ink-950/95 backdrop-blur-md flex items-center justify-center p-4"
