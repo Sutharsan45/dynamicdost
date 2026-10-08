@@ -29,6 +29,9 @@ export function ProductGallery({
 }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const thumbsRef = useRef<HTMLDivElement>(null);
 
   const total = images.length;
@@ -42,7 +45,7 @@ export function ProductGallery({
     setActiveIndex((i) => (i - 1 + total) % total);
   }, [total]);
 
-  /* Keyboard nav */
+  /* ---------------- Keyboard nav ---------------- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") next();
@@ -53,7 +56,7 @@ export function ProductGallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
-  /* Lock body scroll in lightbox */
+  /* ---------------- Lock body scroll in lightbox ---------------- */
   useEffect(() => {
     if (lightboxOpen) {
       document.body.style.overflow = "hidden";
@@ -63,7 +66,31 @@ export function ProductGallery({
     }
   }, [lightboxOpen]);
 
-  /* Auto-scroll active thumbnail into view when it changes */
+  /* ---------------- Update arrow visibility on scroll ---------------- */
+  const updateScrollState = useCallback(() => {
+    const el = thumbsRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = thumbsRef.current;
+    if (!el) return;
+
+    updateScrollState();
+
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [updateScrollState, images.length]);
+
+  /* ---------------- Auto-scroll active thumbnail into view ---------------- */
   useEffect(() => {
     const container = thumbsRef.current;
     if (!container) return;
@@ -78,6 +105,18 @@ export function ProductGallery({
       });
     }
   }, [activeIndex]);
+
+  /* ---------------- Manual scroll by thumbnail width ---------------- */
+  const scrollByAmount = (direction: "left" | "right") => {
+    const el = thumbsRef.current;
+    if (!el) return;
+    // Scroll by ~3 thumbnails at a time
+    const amount = el.clientWidth * 0.7;
+    el.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
+  };
 
   /* -------- No images: placeholder -------- */
   if (!hasImages) {
@@ -145,28 +184,24 @@ export function ProductGallery({
           </span>
         </div>
 
-        {/* Featured badge */}
         {featured && (
           <span className="pointer-events-none absolute top-4 left-4 z-20 inline-flex items-center rounded-full bg-ink-900 text-white text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5">
             Featured
           </span>
         )}
 
-        {/* Component type badge */}
         {componentType && (
           <span className="pointer-events-none absolute top-4 right-4 z-20 inline-flex items-center rounded-full bg-white border border-ink-200 text-ink-700 text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5">
             {componentType}
           </span>
         )}
 
-        {/* Counter */}
         {total > 1 && (
           <span className="pointer-events-none absolute bottom-4 right-4 z-20 inline-flex items-center rounded-full bg-ink-900/85 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 tabular-nums">
             {activeIndex + 1} / {total}
           </span>
         )}
 
-        {/* Prev / Next */}
         {total > 1 && (
           <>
             <button
@@ -195,49 +230,75 @@ export function ProductGallery({
         )}
       </div>
 
-      {/* ============ HORIZONTAL SCROLLING THUMBNAILS ============ */}
+      {/* ============ HORIZONTAL THUMBNAILS WITH ARROWS ============ */}
       {total > 1 && (
-        <div className="mt-3">
-          {/* Scroll container */}
-          <div
-            ref={thumbsRef}
-            className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth pb-1"
-            style={{ scrollbarWidth: "thin" }}
-          >
-            {images.map((img, i) => {
-              const active = i === activeIndex;
-              return (
-                <button
-                  key={`${img}-${i}`}
-                  type="button"
-                  data-thumb-index={i}
-                  onClick={() => setActiveIndex(i)}
-                  aria-label={`Show image ${i + 1}`}
-                  aria-current={active}
-                  className={cn(
-                    "relative aspect-square w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all shrink-0",
-                    active
-                      ? "border-brand-500 ring-2 ring-brand-500/20"
-                      : "border-ink-200 hover:border-ink-400 opacity-70 hover:opacity-100"
-                  )}
-                >
-                  <Image
-                    src={img}
-                    alt={`${name} thumbnail ${i + 1}`}
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
-                </button>
-              );
-            })}
+        <div className="relative mt-3">
+          {/* Left arrow */}
+          {canScrollLeft && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount("left")}
+              aria-label="Scroll thumbnails left"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white border border-ink-200 shadow-md grid place-items-center text-ink-700 hover:bg-ink-50 transition-all -ml-2 sm:-ml-3"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Right arrow */}
+          {canScrollRight && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount("right")}
+              aria-label="Scroll thumbnails right"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white border border-ink-200 shadow-md grid place-items-center text-ink-700 hover:bg-ink-50 transition-all -mr-2 sm:-mr-3"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Scroll strip — small padding on edges to keep arrow overlays clean */}
+          <div className="px-4 sm:px-6">
+            <div
+              ref={thumbsRef}
+              className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
+            >
+              {images.map((img, i) => {
+                const active = i === activeIndex;
+                return (
+                  <button
+                    key={`${img}-${i}`}
+                    type="button"
+                    data-thumb-index={i}
+                    onClick={() => setActiveIndex(i)}
+                    aria-label={`Show image ${i + 1}`}
+                    aria-current={active}
+                    className={cn(
+                      "relative aspect-square w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all shrink-0",
+                      active
+                        ? "border-brand-500 ring-2 ring-brand-500/20"
+                        : "border-ink-200 hover:border-ink-400 opacity-70 hover:opacity-100"
+                    )}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${name} thumbnail ${i + 1}`}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Optional small scroll hint */}
-          {total > 6 && (
-            <p className="mt-1.5 text-[11px] text-ink-400 text-center sm:hidden">
-              Swipe to see more →
-            </p>
+          {/* Edge fade hints (optional, subtle) */}
+          {canScrollLeft && (
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent" />
+          )}
+          {canScrollRight && (
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent" />
           )}
         </div>
       )}
@@ -248,7 +309,6 @@ export function ProductGallery({
           className="fixed inset-0 z-[100] bg-ink-950/95 backdrop-blur-md flex items-center justify-center p-4"
           onClick={() => setLightboxOpen(false)}
         >
-          {/* Close */}
           <button
             type="button"
             onClick={() => setLightboxOpen(false)}
@@ -258,12 +318,10 @@ export function ProductGallery({
             <X className="h-5 w-5" />
           </button>
 
-          {/* Counter */}
           <span className="absolute top-6 left-6 text-white/80 text-sm font-medium tabular-nums z-20">
             {activeIndex + 1} / {total}
           </span>
 
-          {/* Prev */}
           {total > 1 && (
             <button
               type="button"
@@ -278,7 +336,6 @@ export function ProductGallery({
             </button>
           )}
 
-          {/* Image */}
           <div
             className="relative w-full max-w-5xl aspect-square"
             onClick={(e) => e.stopPropagation()}
@@ -293,7 +350,6 @@ export function ProductGallery({
             />
           </div>
 
-          {/* Next */}
           {total > 1 && (
             <button
               type="button"
@@ -308,7 +364,6 @@ export function ProductGallery({
             </button>
           )}
 
-          {/* Lightbox thumbnail strip */}
           {total > 1 && (
             <div
               className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto p-2 rounded-xl bg-white/5 backdrop-blur-sm no-scrollbar"
