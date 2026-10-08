@@ -36,8 +36,9 @@ export async function generateMetadata({ params }: PageProps) {
         description: product.description,
         url: `/products/detail/${product.slug}`,
         type: "website",
-        images:
-          product.images?.[0] ? [{ url: apiUrl(product.images[0]) }] : [],
+        images: product.images?.[0]
+          ? [{ url: apiUrl(product.images[0]) }]
+          : [],
       },
       alternates: {
         canonical: `/products/detail/${product.slug}`,
@@ -61,6 +62,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  /* Normalize all image URLs through apiUrl */
+  const normalizedImages: string[] =
+    product.images && product.images.length > 0
+      ? product.images.map((img: string) => apiUrl(img))
+      : [];
+
   /* Schema.org structured data */
   const jsonLd = {
     "@context": "https://schema.org",
@@ -70,7 +77,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     description: product.description,
     category: `${product.type} zipper`,
     material: product.material,
-    image: product.images?.[0] ? apiUrl(product.images[0]) : undefined,
+    image: normalizedImages[0] ?? undefined,
     brand: {
       "@type": "Brand",
       name: "Dynamic Dost",
@@ -108,12 +115,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
     ],
   };
 
-  const hasImages = product.images && product.images.length > 0;
-  const primaryImage = hasImages ? apiUrl(product.images[0]) : null;
-  const galleryImages: string[] = hasImages
-    ? product.images.slice(0, 5).map((img: string) => apiUrl(img))
-    : [];
-
   return (
     <>
       <script
@@ -149,10 +150,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
         {/* MAIN GRID */}
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-14 items-start">
           {/* -------- Image panel -------- */}
-          {/* -------- Image panel -------- */}
           <div className="lg:sticky lg:top-24">
             <ProductGallery
-              images={product.images ?? []}
+              images={normalizedImages}
               name={product.name}
               featured={product.featured}
               componentType={product.componentType}

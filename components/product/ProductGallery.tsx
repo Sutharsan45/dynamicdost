@@ -2,12 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import {
-  ChevronLeft,
-  ChevronRight,
-  X,
-  ZoomIn,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { apiUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -45,8 +41,9 @@ export function ProductGallery({
     setActiveIndex((i) => (i - 1 + total) % total);
   }, [total]);
 
-  /* ---------------- Keyboard nav ---------------- */
+  /* ---------------- Keyboard nav (only in lightbox) ---------------- */
   useEffect(() => {
+    if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") next();
       if (e.key === "ArrowLeft") prev();
@@ -54,7 +51,7 @@ export function ProductGallery({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev]);
+  }, [next, prev, lightboxOpen]);
 
   /* ---------------- Lock body scroll in lightbox ---------------- */
   useEffect(() => {
@@ -80,37 +77,42 @@ export function ProductGallery({
     if (!el) return;
 
     updateScrollState();
+    const timeout = setTimeout(updateScrollState, 300);
 
     el.addEventListener("scroll", updateScrollState, { passive: true });
     window.addEventListener("resize", updateScrollState);
 
     return () => {
+      clearTimeout(timeout);
       el.removeEventListener("scroll", updateScrollState);
       window.removeEventListener("resize", updateScrollState);
     };
   }, [updateScrollState, images.length]);
 
-  /* ---------------- Auto-scroll active thumbnail into view ---------------- */
+  /* ---------------- Auto-scroll active thumbnail ---------------- */
   useEffect(() => {
     const container = thumbsRef.current;
     if (!container) return;
     const active = container.querySelector<HTMLElement>(
       `[data-thumb-index="${activeIndex}"]`
     );
-    if (active) {
-      active.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
+    if (!active) return;
+
+    const targetScroll =
+      active.offsetLeft -
+      container.clientWidth / 2 +
+      active.clientWidth / 2;
+
+    container.scrollTo({
+      left: Math.max(0, targetScroll),
+      behavior: "smooth",
+    });
   }, [activeIndex]);
 
-  /* ---------------- Manual scroll by thumbnail width ---------------- */
+  /* ---------------- Manual scroll by chunk ---------------- */
   const scrollByAmount = (direction: "left" | "right") => {
     const el = thumbsRef.current;
     if (!el) return;
-    // Scroll by ~3 thumbnails at a time
     const amount = el.clientWidth * 0.7;
     el.scrollBy({
       left: direction === "left" ? -amount : amount,
@@ -158,7 +160,7 @@ export function ProductGallery({
       {/* ============ MAIN IMAGE ============ */}
       <div className="group relative aspect-square rounded-2xl border border-ink-200 bg-gradient-to-br from-ink-50 via-white to-ink-50 overflow-hidden">
         <Image
-          src={images[activeIndex]}
+          src={apiUrl(images[activeIndex])}
           alt={`${name} — image ${activeIndex + 1}`}
           fill
           priority={activeIndex === 0}
@@ -166,7 +168,6 @@ export function ProductGallery({
           className="object-cover"
         />
 
-        {/* Click to open lightbox */}
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
@@ -176,7 +177,6 @@ export function ProductGallery({
           <span className="sr-only">Open full size</span>
         </button>
 
-        {/* Zoom hint */}
         <div className="pointer-events-none absolute bottom-4 left-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-900/85 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1">
             <ZoomIn className="h-3 w-3" />
@@ -233,7 +233,6 @@ export function ProductGallery({
       {/* ============ HORIZONTAL THUMBNAILS WITH ARROWS ============ */}
       {total > 1 && (
         <div className="relative mt-3">
-          {/* Left arrow */}
           {canScrollLeft && (
             <button
               type="button"
@@ -245,7 +244,6 @@ export function ProductGallery({
             </button>
           )}
 
-          {/* Right arrow */}
           {canScrollRight && (
             <button
               type="button"
@@ -257,7 +255,6 @@ export function ProductGallery({
             </button>
           )}
 
-          {/* Scroll strip — small padding on edges to keep arrow overlays clean */}
           <div className="px-4 sm:px-6">
             <div
               ref={thumbsRef}
@@ -281,7 +278,7 @@ export function ProductGallery({
                     )}
                   >
                     <Image
-                      src={img}
+                      src={apiUrl(img)}
                       alt={`${name} thumbnail ${i + 1}`}
                       fill
                       sizes="80px"
@@ -293,7 +290,6 @@ export function ProductGallery({
             </div>
           </div>
 
-          {/* Edge fade hints (optional, subtle) */}
           {canScrollLeft && (
             <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent" />
           )}
@@ -303,7 +299,7 @@ export function ProductGallery({
         </div>
       )}
 
-      {/* ============ LIGHTBOXnnbnhn ============ */}
+      {/* ============ LIGHTBOX ============ */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-[100] bg-ink-950/95 backdrop-blur-md flex items-center justify-center p-4"
@@ -341,7 +337,7 @@ export function ProductGallery({
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={images[activeIndex]}
+              src={apiUrl(images[activeIndex])}
               alt={`${name} — full size view ${activeIndex + 1}`}
               fill
               sizes="100vw"
@@ -385,7 +381,7 @@ export function ProductGallery({
                     )}
                   >
                     <Image
-                      src={img}
+                      src={apiUrl(img)}
                       alt=""
                       fill
                       sizes="56px"
