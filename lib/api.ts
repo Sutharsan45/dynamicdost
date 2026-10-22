@@ -1,80 +1,99 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+/* =========================================
+   BACKEND CONFIG
+   ========================================= */
+const BACKEND_BASE = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://siva123.pythonanywhere.com"
+).replace(/\/+$/, ""); // Remove trailing slash if present
 
 /* =========================================
-   AUTH TOKEN (localStorage)
+   AUTH TOKEN HELPERS
    ========================================= */
-const TOKEN_KEY = "dd_admin_token";
-
-export function setToken(token: string) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
-}
-
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem("admin_token");
+}
+
+export function setToken(token: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("admin_token", token);
 }
 
 export function clearToken() {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(TOKEN_KEY);
-  }
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("admin_token");
 }
 
 /* =========================================
    FETCH WRAPPER
+   Handles JSON, FormData, and auth headers.
    ========================================= */
 export async function apiFetch<T = any>(
   path: string,
-  options: RequestInit = {}
+  options?: RequestInit
 ): Promise<T> {
+  // Ensure the path starts with a slash
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  
+  // Build the full URL (never prepend if it's already absolute)
+  const url = cleanPath.startsWith("http")
+    ? cleanPath
+    : `${BACKEND_BASE}${cleanPath}`;
+
+  // Check if the body is FormData (for image uploads)
+  const isFormData =
+    typeof FormData !== "undefined" && options?.body instanceof FormData;
+
+  // Build headers
+  const headers = new Headers(options?.headers);
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  // Attach Bearer token if it exists
   const token = getToken();
-
-  const headers: Record<string, string> = {
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  /* Only set JSON content-type when body isn't FormData */
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(url, {
     ...options,
     headers,
     cache: "no-store",
   });
 
-  if (res.status === 401) {
-    clearToken();
-    if (
-      typeof window !== "undefined" &&
-      !window.location.pathname.includes("/admin/login")
-    ) {
-      window.location.href = "/admin/login";
-    }
-    throw new Error("Unauthorized");
-  }
-
-  const data = await res.json().catch(() => ({}));
-
   if (!res.ok) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`API ${res.status}: ${text || cleanPath}`);
   }
 
-  return data as T;
+  // Handle empty responses (e.g., successful DELETE requests)
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return {} as T;
+  }
+
+  return res.json();
 }
 
-/* Build full URL for images / direct links */
-export function apiUrl(path: string): string {
-  if (path.startsWith("http")) return path;
-  return `${API_URL}${path}`;
-}
+/* =========================================
+   IMAGE URL NORMALIZER
+   ========================================= */
+export function apiUrl(path: string | undefined | null): string {
+  if (!path) return "";
 
-export const API_BASE = API_URL;
+  // Already an absolute URL
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  // Local public asset (from /public/products/uploads/)
+  if (path.startsWith("/products/uploads/")) {
+    return path;
+  }
+
+  // Ensure leading slash
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+
+  // Prefix with the backend base URL
+  return `${BACKEND_BASE}${normalized}`;
+}

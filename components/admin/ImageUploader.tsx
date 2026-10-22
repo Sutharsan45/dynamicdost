@@ -3,16 +3,27 @@
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { Upload, X, Loader2 } from "lucide-react";
-import { apiUrl, getToken, API_BASE } from "@/lib/api";
+import { apiFetch, apiUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-interface Props {
-  images: string[];
-  onChange: (images: string[]) => void;
-  maxImages?: number;
+export interface ImageItem {
+  url: string;
+  alt: string;
 }
 
-export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
+interface Props {
+  images: ImageItem[];
+  onChange: (images: ImageItem[]) => void;
+  maxImages?: number;
+  productName?: string;
+}
+
+export function ImageUploader({
+  images,
+  onChange,
+  maxImages = 40,
+  productName = "",
+}: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -32,29 +43,20 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
       const toUpload = fileArray.slice(0, remaining);
       setUploading(true);
 
-      const uploaded: string[] = [];
+      const uploaded: ImageItem[] = [];
 
       for (const file of toUpload) {
         try {
           const form = new FormData();
           form.append("file", file);
 
-          const res = await fetch(`${API_BASE}/api/admin/upload`, {
+          const data = await apiFetch<{ url: string }>("/api/admin/upload", {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${getToken() ?? ""}`,
-            },
             body: form,
+            headers: {},
           });
 
-          const data = await res.json();
-
-          if (!res.ok) {
-            setError(data.error ?? `Failed: ${file.name}`);
-            continue;
-          }
-
-          uploaded.push(data.url);
+          uploaded.push({ url: data.url, alt: "" });
         } catch {
           setError(`Failed to upload ${file.name}`);
         }
@@ -84,23 +86,25 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
     }
   };
 
-  const remove = async (url: string) => {
+  const remove = async (indexToRemove: number, url: string) => {
     if (!confirm("Delete this image?")) return;
-    onChange(images.filter((i) => i !== url));
-
-    const filename = url.split("/").pop() ?? "";
+    onChange(images.filter((_, i) => i !== indexToRemove));
     try {
-      await fetch(
-        `${API_BASE}/api/admin/upload?filename=${encodeURIComponent(filename)}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getToken() ?? ""}`,
-          },
-        }
-      );
-    } catch {
-      // ignore
+      await apiFetch(`/api/admin/upload?url=${encodeURIComponent(url)}`, {
+        method: "DELETE",
+      });
+    } catch {}
+  };
+
+  const updateAlt = (index: number, newAlt: string) => {
+    const next = [...images];
+    next[index] = { ...next[index], alt: newAlt };
+    onChange(next);
+  };
+
+  const handleFocus = (index: number) => {
+    if (!images[index].alt && productName) {
+      updateAlt(index, productName);
     }
   };
 
@@ -113,7 +117,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {images.length < maxImages && (
         <div
           onDragOver={(e) => {
@@ -143,9 +147,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
           {uploading ? (
             <div className="flex flex-col items-center gap-2 py-4">
               <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
-              <span className="text-sm font-medium text-ink-700">
-                Uploading…
-              </span>
+              <span className="text-sm font-medium text-ink-700">Uploading…</span>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 py-4">
@@ -172,17 +174,16 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
       )}
 
       {images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {images.map((url, idx) => {
-            const imageSrc = apiUrl(url);
-            return (
-              <div
-                key={url}
-                className="relative group aspect-square rounded-xl overflow-hidden border border-ink-200 bg-ink-50"
-              >
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {images.map((item, idx) => (
+            <div
+              key={item.url}
+              className="relative flex flex-col gap-2 rounded-xl border border-ink-200 bg-white p-2"
+            >
+              <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-ink-50 group">
                 <Image
-                  src={imageSrc}
-                  alt={`Product image ${idx + 1}`}
+                  src={apiUrl(item.url)}
+                  alt={item.alt || "Preview"}
                   fill
                   sizes="(max-width: 640px) 50vw, 20vw"
                   className="object-cover"
@@ -207,7 +208,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
                   )}
                   <button
                     type="button"
-                    onClick={() => remove(url)}
+                    onClick={() => remove(idx, item.url)}
                     className="p-1.5 rounded-md bg-red-500 text-white hover:bg-red-600"
                     title="Remove"
                   >
@@ -225,14 +226,32 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: Props) {
                   )}
                 </div>
               </div>
-            );
-          })}
+
+              {/* 🔽 THIS IS THE INPUT BOX THAT SHOULD APPEAR 🔽 */}
+              <div>
+                <label className="block text-[11px] font-medium text-ink-600 mb-1">
+                  Image Name / Alt Text
+                </label>
+                <input
+                  type="text"
+                  value={item.alt}
+                  onChange={(e) => updateAlt(idx, e.target.value)}
+                  onFocus={() => handleFocus(idx)}
+                  placeholder={
+                    productName
+                      ? `e.g. ${productName} — Black`
+                      : "e.g. Black variant"
+                  }
+                  className="w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-xs text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/20"
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       <p className="text-xs text-ink-500">
-        First image is the primary. Images are auto-resized to 1600px and
-        converted to WebP.
+        First image is the primary. Images are auto-resized to 1600px and converted to WebP.
       </p>
     </div>
   );

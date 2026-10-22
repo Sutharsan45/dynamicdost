@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Download } from "lucide-react";
 import { getCategory, categories } from "@/lib/categories-data";
 import { ProductCard } from "@/components/product/ProductCard";
 import { CategoryPagination } from "@/components/product/CategoryPagination";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  params: Promise<{ category: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ page?: string; search?: string }>;
 }
 
@@ -18,15 +18,15 @@ interface PageProps {
    STATIC GENERATION
    ================================ */
 export async function generateStaticParams() {
-  return categories.map((c) => ({ category: c.slug }));
+  return categories.map((c) => ({ slug: c.slug }));
 }
 
 /* ================================
    SEO METADATA
    ================================ */
 export async function generateMetadata({ params }: PageProps) {
-  const { category } = await params;
-  const cat = getCategory(category);
+  const { slug } = await params;
+  const cat = getCategory(slug);
   if (!cat) return {};
 
   return {
@@ -104,9 +104,9 @@ export default async function CategoryPage({
   params,
   searchParams,
 }: PageProps) {
-  const { category } = await params;
+  const { slug } = await params;
   const { page: pageParam, search = "" } = await searchParams;
-  const cat = getCategory(category);
+  const cat = getCategory(slug);
 
   if (!cat) notFound();
 
@@ -180,10 +180,28 @@ export default async function CategoryPage({
                 {cat.description}
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              {/* <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link href="/contact" className="btn btn-primary btn-lg">
                   Contact us <ArrowRight className="h-4 w-4" />
                 </Link>
+                <Link href="/products" className="btn btn-secondary btn-lg">
+                  Browse all products
+                </Link>
+              </div> */}
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 flex-wrap">
+                <Link href="/contact" className="btn btn-primary btn-lg">
+                  Contact us <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                {/* NEW: Download full category catalog */}
+                <Link
+                  href={`/products/${cat.slug}/catalog/all`}
+                  className="btn btn-secondary btn-lg"
+                >
+                  <Download className="h-4 w-4" />
+                  Download full catalog
+                </Link>
+
                 <Link href="/products" className="btn btn-secondary btn-lg">
                   Browse all products
                 </Link>

@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowRight,
   Download,
   FileText,
@@ -14,6 +13,7 @@ import {
 import { SpecTable } from "@/components/product/SpecTable";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { CatalogButton } from "@/components/product/CatalogButton";
 import { apiFetch, apiUrl } from "@/lib/api";
 import { formatNumber, titleCase } from "@/lib/utils";
 
@@ -28,6 +28,11 @@ export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   try {
     const product = await apiFetch<any>(`/api/products/${slug}`);
+    
+    // Handle both old string array and new object array for images
+    const firstImage = product.images?.[0];
+    const ogImage = typeof firstImage === "string" ? firstImage : firstImage?.url;
+
     return {
       title: `${product.name} — Specs, MOQ, Lead Time`,
       description: product.description,
@@ -36,9 +41,7 @@ export async function generateMetadata({ params }: PageProps) {
         description: product.description,
         url: `/products/detail/${product.slug}`,
         type: "website",
-        images: product.images?.[0]
-          ? [{ url: apiUrl(product.images[0]) }]
-          : [],
+        images: ogImage ? [{ url: apiUrl(ogImage) }] : [],
       },
       alternates: {
         canonical: `/products/detail/${product.slug}`,
@@ -63,10 +66,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   /* Normalize all image URLs through apiUrl */
-  const normalizedImages: string[] =
-    product.images && product.images.length > 0
-      ? product.images.map((img: string) => apiUrl(img))
-      : [];
+  const normalizedImages: { url: string; alt: string }[] = (product.images ?? []).map((img: any) => {
+    if (typeof img === "string") return { url: apiUrl(img), alt: product.name };
+    return { url: apiUrl(img.url), alt: img.alt || product.name };
+  });
 
   /* Schema.org structured data */
   const jsonLd = {
@@ -77,7 +80,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     description: product.description,
     category: `${product.type} zipper`,
     material: product.material,
-    image: normalizedImages[0] ?? undefined,
+    image: normalizedImages[0]?.url ?? undefined,
     brand: {
       "@type": "Brand",
       name: "Dynamic Dost",
@@ -156,7 +159,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               name={product.name}
               featured={product.featured}
               componentType={product.componentType}
-              gaugeMm={product.specs.gaugeMm}
+              gaugeMm={product.specs?.gaugeMm}
               type={product.type}
             />
 
@@ -235,22 +238,22 @@ export default async function ProductDetailPage({ params }: PageProps) {
               <QuickSpec
                 icon={Gauge}
                 label="Gauge"
-                value={`${product.specs.gaugeMm} mm`}
+                value={`${product.specs?.gaugeMm ?? "—"} mm`}
               />
               <QuickSpec
                 icon={Ruler}
                 label="Tensile strength"
-                value={`${product.specs.tensileStrengthN} N`}
+                value={`${product.specs?.tensileStrengthN ?? "—"} N`}
               />
               <QuickSpec
                 icon={Package}
                 label="MOQ"
-                value={`${formatNumber(product.specs.minOrderQty)} pcs`}
+                value={`${formatNumber(product.specs?.minOrderQty ?? 0)} pcs`}
               />
               <QuickSpec
                 icon={Clock}
                 label="Lead time"
-                value={`${product.specs.leadTimeDays} days`}
+                value={`${product.specs?.leadTimeDays ?? "—"} days`}
               />
             </div>
 
@@ -275,11 +278,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
             )}
 
             {/* Actions */}
-            <div className="mt-8 pt-8 border-t border-ink-100">
-              <p className="text-xs uppercase tracking-wider text-ink-500 mb-3 font-medium">
+            <div className="mt-8 pt-8 border-t border-ink-100 space-y-4">
+              <p className="text-xs uppercase tracking-wider text-ink-500 font-medium">
                 Get in touch
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+
+              {/* 🔥 E-Catalog Button */}
+              <CatalogButton
+                productName={product.name}
+                productSlug={product.slug ?? slug}
+                imageUrl={normalizedImages[0]?.url}
+                variant="primary"
+              />
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link
                   href="/contact"
                   className="btn btn-primary btn-lg flex-1"
@@ -298,7 +310,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                   </a>
                 )}
               </div>
-              <p className="mt-3 text-xs text-ink-500">
+              <p className="text-xs text-ink-500 mt-2">
                 Our engineering team responds within 4 business hours.
               </p>
             </div>
