@@ -148,12 +148,19 @@ export default async function CategoryPage({
                   Contact us <ArrowRight className="h-4 w-4" />
                 </Link>
 
-                <Link
-                  href={`/products/${cat.slug}/catalog/all`}
+                {/* <Link
+                  href="/products"
                   className="btn btn-secondary btn-lg"
                 >
                   <Download className="h-4 w-4" />
                   View full catalog
+                </Link> */}
+                <Link
+                  href={`/products/catalog/${cat.slug}/all`}
+                  className="btn btn-secondary btn-lg"
+                >
+                  <Download className="h-4 w-4" />
+                  View {cat.name} catalog
                 </Link>
 
                 <Link href="/products" className="btn btn-secondary btn-lg">

@@ -684,7 +684,7 @@ export default function InquiryPage() {
                 </div>
 
                 <Link
-                  href="/products/catalog/all-products/all"
+                  href="/products"
                   className="group flex items-center gap-3 rounded-xl border border-ink-200 bg-white p-5 hover:border-ink-300 hover:shadow-md transition-all"
                 >
                   <div className="h-10 w-10 rounded-lg bg-ink-50 grid place-items-center">
