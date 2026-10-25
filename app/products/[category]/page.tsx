@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Download } from "lucide-react";
 import { getCategory, categories } from "@/lib/categories-data";
+import { apiFetch } from "@/lib/api";
 import { ProductCard } from "@/components/product/ProductCard";
 import { CategoryPagination } from "@/components/product/CategoryPagination";
-import { apiFetch } from "@/lib/api";
+import { AnimatedCategoryVisual } from "@/components/product/AnimatedCategoryVisual";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -98,13 +98,24 @@ export default async function CategoryPage({
   const color =
     COLOR_MAP[(cat.color as ColorKey) ?? "brand"] ?? COLOR_MAP.brand;
 
+  // Check if this category has an animation
+  const showAnimation = ["slider", "teeth", "webbing"].includes(cat.slug);
+
   return (
     <>
-      {/* HERO */}
+      {/* =========================================
+          HERO
+      ========================================= */}
       <section className="border-b border-ink-100 bg-ink-50">
         <div className="container-tight py-10 sm:py-14 lg:py-16">
-          <nav className="flex items-center gap-2 text-sm text-ink-500 mb-6 flex-wrap">
-            <Link href="/products" className="inline-flex items-center gap-1.5 hover:text-ink-900 transition-colors">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-sm text-ink-500 mb-6 flex-wrap"
+          >
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 hover:text-ink-900 transition-colors"
+            >
               <ArrowLeft className="h-3.5 w-3.5" />
               All products
             </Link>
@@ -112,9 +123,17 @@ export default async function CategoryPage({
             <span className="text-ink-900 font-medium">{cat.name}</span>
           </nav>
 
-          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 items-start">
-            <div className="lg:col-span-2">
-              <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium", color.chipBg, color.chipText, color.chipBorder)}>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left: Text Content */}
+            <div>
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium",
+                  color.chipBg,
+                  color.chipText,
+                  color.chipBorder
+                )}
+              >
                 <span className={cn("h-1.5 w-1.5 rounded-full", color.dot)} />
                 {cat.name}
               </div>
@@ -129,9 +148,8 @@ export default async function CategoryPage({
                   Contact us <ArrowRight className="h-4 w-4" />
                 </Link>
 
-                {/* UPDATED LINK: Points to the full catalog grid */}
                 <Link
-                  href={`/products/catalog/${cat.slug}/all`}
+                  href={`/products/${cat.slug}/catalog/all`}
                   className="btn btn-secondary btn-lg"
                 >
                   <Download className="h-4 w-4" />
@@ -144,29 +162,48 @@ export default async function CategoryPage({
               </div>
             </div>
 
-            <div className="rounded-xl border border-ink-200 bg-white p-6 space-y-5">
-              <div className={cn("h-14 w-14 rounded-xl grid place-items-center text-2xl", color.iconBg)}>
-                <span aria-hidden>{cat.icon}</span>
-              </div>
+            {/* Right: Animation or Stats */}
+            <div className="relative">
+              {showAnimation ? (
+                <div className="rounded-2xl bg-white border border-ink-200 p-4 h-80 shadow-sm flex items-center justify-center overflow-hidden relative">
+                  {/* The Animation Component */}
+                  <AnimatedCategoryVisual category={cat.slug as any} className="w-full h-full" />
 
-              <dl className="space-y-4">
-                {cat.stats.map((stat) => (
-                  <div key={stat.label}>
-                    <dt className="text-xs text-ink-500 uppercase tracking-wider font-medium">
-                      {stat.label}
-                    </dt>
-                    <dd className="mt-1.5 text-xl font-semibold text-ink-900 tracking-tight">
-                      {stat.value}
-                    </dd>
+                  {/* Small label overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 text-center">
+                    <span className="inline-block rounded-full bg-white/90 backdrop-blur px-3 py-1 text-xs font-semibold text-ink-700 shadow-sm border border-ink-100">
+                      {cat.name} demonstration
+                    </span>
                   </div>
-                ))}
-              </dl>
+                </div>
+              ) : (
+                /* Fallback to the stats panel */
+                <div className="rounded-xl border border-ink-200 bg-white p-6 space-y-5">
+                  <div className={cn("h-14 w-14 rounded-xl grid place-items-center text-2xl", color.iconBg)}>
+                    <span aria-hidden>{cat.icon}</span>
+                  </div>
+                  <dl className="space-y-4">
+                    {cat.stats.map((stat) => (
+                      <div key={stat.label}>
+                        <dt className="text-xs text-ink-500 uppercase tracking-wider font-medium">
+                          {stat.label}
+                        </dt>
+                        <dd className="mt-1.5 text-xl font-semibold text-ink-900 tracking-tight">
+                          {stat.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* PRODUCTS GRID */}
+      {/* =========================================
+          PRODUCTS GRID
+      ========================================= */}
       <section className="section-sm">
         <div className="container-tight">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
@@ -186,23 +223,35 @@ export default async function CategoryPage({
                 </p>
               )}
             </div>
-            <Link href="/contact" className="btn btn-primary btn-md hidden sm:inline-flex">
+            <Link
+              href="/contact"
+              className="btn btn-primary btn-md hidden sm:inline-flex"
+            >
               Contact us <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           {result.items.length === 0 ? (
             <div className="rounded-xl border border-dashed border-ink-300 py-20 text-center">
-              <div className={cn("mx-auto h-14 w-14 rounded-full grid place-items-center mb-4", color.iconBg)}>
+              <div
+                className={cn(
+                  "mx-auto h-14 w-14 rounded-full grid place-items-center mb-4",
+                  color.iconBg
+                )}
+              >
                 <span className="text-2xl">{cat.icon}</span>
               </div>
               <p className="text-ink-600 font-medium">
                 No products in this category yet.
               </p>
               <p className="text-sm text-ink-500 mt-1 max-w-md mx-auto">
-                New variants are added regularly. Contact us for custom requirements or to request a sample.
+                New variants are added regularly. Contact us for custom
+                requirements or to request a sample.
               </p>
-              <Link href="/contact" className="mt-5 inline-flex items-center gap-1 text-brand-600 text-sm font-medium hover:underline">
+              <Link
+                href="/contact"
+                className="mt-5 inline-flex items-center gap-1 text-brand-600 text-sm font-medium hover:underline"
+              >
                 Contact sales <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -231,28 +280,48 @@ export default async function CategoryPage({
         </div>
       </section>
 
-      {/* SIBLING CATEGORIES */}
+      {/* =========================================
+          SIBLING CATEGORIES
+      ========================================= */}
       <section className="section-sm bg-ink-50 border-t border-ink-100">
         <div className="container-tight">
           <h3 className="text-sm font-semibold text-ink-900 mb-5">
-            {cat.group === "zipper" ? "Explore other zipper components" : "Explore other accessories"}
+            {cat.group === "zipper"
+              ? "Explore other zipper components"
+              : "Explore other accessories"}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {categories
-              .filter((c) => c.slug !== cat.slug && c.group === cat.group)
+              .filter((c) => c.slug !== cat.slug && c.group === cat.group && c.slug !== "tape")
               .map((other) => {
-                const otherColor = COLOR_MAP[(other.color as ColorKey) ?? "brand"] ?? COLOR_MAP.brand;
+                const otherColor =
+                  COLOR_MAP[(other.color as ColorKey) ?? "brand"] ??
+                  COLOR_MAP.brand;
 
                 return (
-                  <Link key={other.slug} href={`/products/${other.slug}`} className="group flex items-center justify-between gap-4 rounded-xl border border-ink-200 bg-white p-5 sm:p-6 hover:border-ink-300 hover:shadow-lg transition-all">
+                  <Link
+                    key={other.slug}
+                    href={`/products/${other.slug}`}
+                    className="group flex items-center justify-between gap-4 rounded-xl border border-ink-200 bg-white p-5 sm:p-6 hover:border-ink-300 hover:shadow-lg transition-all"
+                  >
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className={cn("h-12 w-12 rounded-lg grid place-items-center text-2xl shrink-0", otherColor.iconBg)}>
+                      <div
+                        className={cn(
+                          "h-12 w-12 rounded-lg grid place-items-center text-2xl shrink-0",
+                          otherColor.iconBg
+                        )}
+                      >
                         <span aria-hidden>{other.icon}</span>
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", otherColor.dot)} />
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full shrink-0",
+                              otherColor.dot
+                            )}
+                          />
                           <span className="font-semibold text-ink-900 truncate">
                             {other.name}
                           </span>

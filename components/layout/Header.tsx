@@ -86,11 +86,14 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <Link
+            {/* <Link
               href="/contact"
               className="hidden md:inline-flex btn btn-primary btn-md"
             >
               Contact us
+            </Link> */}
+            <Link href="/inquiry" className="hidden md:inline-flex btn btn-primary btn-md">
+              Get a quote
             </Link>
             <button
               onClick={() => setOpen(!open)}
@@ -154,12 +157,19 @@ export function Header() {
           </nav>
 
           <div className="border-t border-ink-100 p-5 space-y-3 pb-safe">
-            <Link
+            {/* <Link
               href="/contact"
               className="btn btn-primary btn-lg w-full"
               onClick={() => setOpen(false)}
             >
               Contact us
+            </Link> */}
+            <Link
+              href="/inquiry"
+              className="btn btn-primary btn-lg w-full"
+              onClick={() => setOpen(false)}
+            >
+              Get a quote
             </Link>
             <a
               href={`mailto:${SITE.email}`}

@@ -1,13 +1,13 @@
 export { BRAND as SITE } from "./brand";
 
-export const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/products", label: "Products" },
-  { href: "/applications", label: "Applications" },
-  { href: "/delivery", label: "Delivery" },
-  { href: "/contact", label: "Contact" },
-  { href: "/about", label: "About" },
-];
+// export const NAV_LINKS = [
+//   { href: "/", label: "Home" },
+//   { href: "/products", label: "Products" },
+//   { href: "/applications", label: "Applications" },
+//   { href: "/delivery", label: "Delivery" },
+//   { href: "/contact", label: "Contact" },
+//   { href: "/about", label: "About" },
+// ];
 
 export const ZIPPER_TYPES = [
   { value: "spiral", label: "Spiral" },
@@ -143,4 +143,13 @@ export const INTERNATIONAL_ZONES: DeliveryZone[] = [
     method: "Sea freight (Sydney / Auckland)",
     notes: "Biosecurity compliance documentation",
   },
+];
+export const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/products", label: "Products" },
+  { href: "/applications", label: "Applications" },
+  { href: "/delivery", label: "Delivery" },
+  // { href: "/inquiry", label: "Inquiry" },   // ← NEW
+  { href: "/contact", label: "Contact" },
+  { href: "/about", label: "About" },
 ];

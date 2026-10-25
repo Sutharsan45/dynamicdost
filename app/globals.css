@@ -393,3 +393,41 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* =========================================
+   CATEGORY ANIMATIONS
+   ========================================= */
+
+/* Slider: Bounces up and down */
+@keyframes slider-bounce {
+  0%, 100% { transform: translateY(-40px); }
+  50% { transform: translateY(40px); }
+}
+.animate-slider-bounce {
+  animation: slider-bounce 3s ease-in-out infinite;
+}
+
+/* Teeth: Left side moves down, right side moves up (interlocking) */
+@keyframes teeth-march {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+.animate-teeth-march {
+  animation: teeth-march 2s ease-in-out infinite;
+}
+
+@keyframes teeth-march-reverse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(20px); }
+}
+.animate-teeth-march-reverse {
+  animation: teeth-march-reverse 2s ease-in-out infinite;
+}
+
+/* Webbing: Subtle flex/bend */
+@keyframes webbing-flex {
+  0%, 100% { transform: scaleY(1) scaleX(1); border-radius: 8px; }
+  50% { transform: scaleY(0.9) scaleX(1.05); border-radius: 20px; }
+}
+.animate-webbing-flex {
+  animation: webbing-flex 3s ease-in-out infinite;
+}

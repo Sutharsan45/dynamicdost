@@ -12,10 +12,18 @@ const PRODUCT_LINKS = [
   { href: "/products?type=fire-retardant", label: "Fire-retardant" },
 ];
 
+// const COMPANY_LINKS = [
+//   { href: "/", label: "Home" },
+//   { href: "/about", label: "About" },
+//   { href: "/delivery", label: "Delivery" },
+//   { href: "/contact", label: "Contact" },
+//   { href: "/applications", label: "Applications" },
+// ];
 const COMPANY_LINKS = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/delivery", label: "Delivery" },
+  { href: "/inquiry", label: "Inquiry" },   // ← NEW
   { href: "/contact", label: "Contact" },
   { href: "/applications", label: "Applications" },
 ];
