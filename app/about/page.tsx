@@ -50,7 +50,7 @@ const MILESTONES = [
   },
   {
     year: "2015",
-    title: "Y.C. Purohit joins as GM",
+    title: "Y.C. Purohit joins",
     desc: "Purohit takes over operations, formalizing production planning and quality systems.",
   },
   {
@@ -267,12 +267,12 @@ export default function AboutPage() {
               The people behind the zippers
             </h2>
             <p className="lead mt-4 text-pretty">
-              Two leaders. One mission. Four decades of showing up for the work
+              Four leaders. One mission. Four decades of showing up for the work
               every single day.
             </p>
           </div>
 
-          <div className="space-y-10 lg:space-y-14">
+          <div className="space-y-10 lg:space-y-16">
             {team.map((person, index) => (
               <LeaderProfile
                 key={person.slug}
@@ -299,10 +299,10 @@ export default function AboutPage() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/contact"
+              href="/inquiry"
               className="btn btn-lg bg-white text-ink-900 hover:bg-ink-100"
             >
-              Contact us <ArrowRight className="h-4 w-4" />
+              Send an inquiry <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/contact"
@@ -327,6 +327,7 @@ function LeaderProfile({
   person: (typeof team)[number];
   reversed: boolean;
 }) {
+  // 🔥 UPDATED: Added violet and amber accents for Bharath and Mahima
   const accentMap = {
     brand: {
       badge: "bg-brand-50 text-brand-700 border-brand-100",
@@ -340,7 +341,25 @@ function LeaderProfile({
       bg: "bg-emerald-50",
       dot: "bg-emerald-500",
     },
-  }[person.accent];
+    violet: {
+      badge: "bg-violet-50 text-violet-700 border-violet-100",
+      icon: "text-violet-600",
+      bg: "bg-violet-50",
+      dot: "bg-violet-500",
+    },
+    amber: {
+      badge: "bg-amber-50 text-amber-700 border-amber-100",
+      icon: "text-amber-600",
+      bg: "bg-amber-50",
+      dot: "bg-amber-500",
+    },
+  }[person.accent] || {
+    // Fallback
+    badge: "bg-ink-50 text-ink-700 border-ink-200",
+    icon: "text-ink-600",
+    bg: "bg-ink-50",
+    dot: "bg-ink-500",
+  };
 
   return (
     <article className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
